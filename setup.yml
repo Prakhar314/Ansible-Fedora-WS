@@ -5,6 +5,7 @@
     the_user: "{{ ansible_user_id }}"
   tasks:
     - debug: var=the_user
+    - debug: var=playbook_dir
 
     - name: Configure DNF
       become: yes
@@ -17,6 +18,7 @@
         - "max_parallel_downloads=10"
         - "defaultyes=True"
         - "keepcache=True"
+
     - name: Clear cache and update
       become: yes
       shell: |
@@ -52,6 +54,12 @@
         name: '@virtualization'
         state: present
 
+    - name: install development tools
+      become: yes
+      dnf:
+        name: '@development-tools'
+        state: present
+
     - name: start and enalbe libvirtd
       become: yes
       systemd:
@@ -74,11 +82,21 @@
           - git-delta
           - duf
           - python-pip
-          - build-essentials
-          - firacode-nerd-fonts
           - foliate
-          - 
+          - gnome-tweaks 
         state: present
+
+    - name: Install terminal font 
+      unarchive:
+        src: https://github.com/ryanoasis/nerd-fonts/releases/download/v3.0.1/FiraCode.zip
+        dest: "/home/{{ the_user }}/.local/share/fonts"
+        remote_src: yes
+    #
+    - name: Install nvim font 
+      unarchive:
+        src: https://github.com/ryanoasis/nerd-fonts/releases/download/v3.0.1/JetBrainsMono.zip
+        dest: "/home/{{ the_user }}/.local/share/fonts"
+        remote_src: yes
 
     - name: Install brave config
       become: yes
@@ -134,22 +152,26 @@
     - name: Set GNOME wallpaper
       command: gsettings set org.gnome.desktop.background picture-uri '{{ playbook_dir }}/wallpaper.png'
 
+    - name: Install gext
+      pip:
+        name: gnome-extensions-cli
+
     - name: Install GNOME extensions
-      command: gdbus call --session --dest org.gnome.Shell.Extensions --object-path /org/gnome/Shell/Extensions --method org.gnome.Shell.Extensions.InstallRemoteExtension "{{ item }}"
+      command: gext install "{{ item }}"
       loop:
         - Vitals@CoreCoding.com
         - no_activities@yaya.cout
         - sp-tray@sp-tray.esenliyim.github.com
         - spotify-controller@koolskateguy89
-        - gsconnect@andyholmes.github.io
+        # - gsconnect@andyholmes.github.io
         - custom-accent-colors@demiskp
         - user-theme@gnome-shell-extensions.gcampax.github.com
         - GPU_profile_selector@lorenzo9904.gmail.com
-        - apps-menu@gnome-shell-extensions.gcampax.github.com
-        - background-logo@fedorahosted.org
-        - launch-new-instance@gnome-shell-extensions.gcampax.github.com
-        - places-menu@gnome-shell-extensions.gcampax.github.com
-        - window-list@gnome-shell-extensions.gcampax.github.com
+        # - apps-menu@gnome-shell-extensions.gcampax.github.com
+        # - background-logo@fedorahosted.org
+        # - launch-new-instance@gnome-shell-extensions.gcampax.github.com
+        # - places-menu@gnome-shell-extensions.gcampax.github.com
+        # - window-list@gnome-shell-extensions.gcampax.github.com
         - pop-shell@system76.com
         - appindicatorsupport@rgcjonas.gmail.com
       register: ps
