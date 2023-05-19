@@ -1,10 +1,13 @@
 - name: Setup Fedora
   hosts: localhost
-  become: yes
   gather_facts: yes
-
+  vars:
+    the_user: "{{ ansible_user_id }}"
   tasks:
+    - debug: var=the_user
+
     - name: Configure DNF
+      become: yes
       lineinfile:
         path: /etc/dnf/dnf.conf
         line: "{{ item }}"
@@ -15,35 +18,49 @@
         - "defaultyes=True"
         - "keepcache=True"
     - name: Clear cache and update
+      become: yes
       shell: |
         dnf -y clean all
         dnf -y update
+      register: ps
+    - debug: var=ps.stdout_lines
 
     - name: Enable RPMFusion
+      become: yes
       shell: |
         dnf -y install https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm 
         dnf -y groupupdate core 
+      register: ps
+    - debug: var=ps.stdout_lines
 
     - name: Update Hostnames
+      become: yes
       hostname: 
         name: endeavour
 
     - name: Media Codecs
+      become: yes
       shell: |
         dnf -y groupupdate multimedia --setop="install_weak_deps=False" --exclude=PackageKit-gstreamer-plugin
         dnf -y groupupdate sound-and-video
-    
+      register: ps
+    - debug: var=ps.stdout_lines
+
     - name: install the virtualization package group
+      become: yes
       dnf:
         name: '@virtualization'
         state: present
 
     - name: start and enalbe libvirtd
+      become: yes
       systemd:
+        name: libvirtd
         state: started
-        enalbed: yes
+        enabled: yes
 
     - name: Install packages with dnf
+      become: yes
       dnf:
         name:
           - alacritty
@@ -60,17 +77,24 @@
         state: present
 
     - name: Install brave config
+      become: yes
       shell: |
         dnf -y config-manager --add-repo https://brave-browser-rpm-release.s3.brave.com/brave-browser.repo 
         rpm --import https://brave-browser-rpm-release.s3.brave.com/brave-core.asc;
+      register: ps
+    - debug: var=ps.stdout_lines
 
     - name: Install VSCode config 
+      become: yes
       shell: |
         rpm --import https://packages.microsoft.com/keys/microsoft.asc
         sh -c 'echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/vscode.repo'
         dnf -y check-update
+      register: ps
+    - debug: var=ps.stdout_lines
 
     - name: Install remaining
+      become: yes
       dnf: 
         name:
           - brave-browser
@@ -78,27 +102,30 @@
         state: present
 
     - name: Install starship
+      become: yes
       shell: |
-        curl -sS https://starship.rs/install.sh | sh
+        curl -sS https://starship.rs/install.sh | sh  -s -- -y
+      register: ps
+    - debug: var=ps.stdout_lines
 
     - name: Configure starship for fish 
       lineinfile: 
-        path: /home/prakhar/.config/fish/config.fish
+        path: "/home/{{ the_user }}/.config/fish/config.fish"
         line: "{{ item }}"
         create: yes
       loop:
-        "starship init fish | source"
+        - "starship init fish | source"
 
     - name: Clone NvChad
       git:
         repo: https://github.com/NvChad/NvChad
-        dest: /home/prakhar/.config/nvim 
+        dest: "/home/{{ the_user }}/.config/nvim"
         depth: 1 
 
     - name: Clone NvChad config 
       git:
         repo: git@github.com:Prakhar314/NvChad-Config.git
-        dest: /home/prakhar/.config/nvim/lua/custom
+        dest: "/home/{{ the_user }}/.config/nvim/lua/custom"
 
     - name: Set GNOME wallpaper
       command: gsettings set org.gnome.desktop.background picture-uri 'wallpaper.png'
@@ -119,3 +146,12 @@
         window-list@gnome-shell-extensions.gcampax.github.com\
         pop-shell@system76.com\
         appindicatorsupport@rgcjonas.gmail.com
+      register: ps
+    - debug: var=ps.stdout_lines
+
+    - name: change user shell to fish
+      become: yes
+      user:
+        name: "{{ the_user }}"
+        shell: /usr/bin/fish
+
