@@ -74,6 +74,10 @@
           - git-delta
           - duf
           - python-pip
+          - build-essentials
+          - firacode-nerd-fonts
+          - foliate
+          - 
         state: present
 
     - name: Install brave config
@@ -128,24 +132,26 @@
         dest: "/home/{{ the_user }}/.config/nvim/lua/custom"
 
     - name: Set GNOME wallpaper
-      command: gsettings set org.gnome.desktop.background picture-uri 'wallpaper.png'
+      command: gsettings set org.gnome.desktop.background picture-uri '{{ playbook_dir }}/wallpaper.png'
 
     - name: Install GNOME extensions
-      command: gnome-extensions install Vitals@CoreCoding.com\
-        no_activities@yaya.cout\
-        sp-tray@sp-tray.esenliyim.github.com\
-        spotify-controller@koolskateguy89\
-        gsconnect@andyholmes.github.io\
-        custom-accent-colors@demiskp\
-        user-theme@gnome-shell-extensions.gcampax.github.com\
-        GPU_profile_selector@lorenzo9904.gmail.com\
-        apps-menu@gnome-shell-extensions.gcampax.github.com\
-        background-logo@fedorahosted.org\
-        launch-new-instance@gnome-shell-extensions.gcampax.github.com\
-        places-menu@gnome-shell-extensions.gcampax.github.com\
-        window-list@gnome-shell-extensions.gcampax.github.com\
-        pop-shell@system76.com\
-        appindicatorsupport@rgcjonas.gmail.com
+      command: gdbus call --session --dest org.gnome.Shell.Extensions --object-path /org/gnome/Shell/Extensions --method org.gnome.Shell.Extensions.InstallRemoteExtension "{{ item }}"
+      loop:
+        - Vitals@CoreCoding.com
+        - no_activities@yaya.cout
+        - sp-tray@sp-tray.esenliyim.github.com
+        - spotify-controller@koolskateguy89
+        - gsconnect@andyholmes.github.io
+        - custom-accent-colors@demiskp
+        - user-theme@gnome-shell-extensions.gcampax.github.com
+        - GPU_profile_selector@lorenzo9904.gmail.com
+        - apps-menu@gnome-shell-extensions.gcampax.github.com
+        - background-logo@fedorahosted.org
+        - launch-new-instance@gnome-shell-extensions.gcampax.github.com
+        - places-menu@gnome-shell-extensions.gcampax.github.com
+        - window-list@gnome-shell-extensions.gcampax.github.com
+        - pop-shell@system76.com
+        - appindicatorsupport@rgcjonas.gmail.com
       register: ps
     - debug: var=ps.stdout_lines
 
@@ -155,3 +161,10 @@
         name: "{{ the_user }}"
         shell: /usr/bin/fish
 
+    - name: Load GNOME config 
+      shell: |
+        dconf load / < "{{ playbook_dir }}/user.conf"
+
+    - name: Copy alacritty config 
+      shell: |
+        cp -r "{{ playbook_dir }}/alacritty" "/home/{{ the_user }}/.config/alacritty"
