@@ -16,13 +16,13 @@
         - "keepcache=True"
     - name: Clear cache and update
       shell: |
-        dnf clean all
-        dnf update
+        dnf -y clean all
+        dnf -y update
 
     - name: Enable RPMFusion
       shell: |
-        dnf install https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm 
-        dnf groupupdate core 
+        dnf -y install https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm 
+        dnf -y groupupdate core 
 
     - name: Update Hostnames
       hostname: 
@@ -30,8 +30,8 @@
 
     - name: Media Codecs
       shell: |
-        dnf groupupdate multimedia --setop="install_weak_deps=False" --exclude=PackageKit-gstreamer-plugin
-        dnf groupupdate sound-and-video
+        dnf -y groupupdate multimedia --setop="install_weak_deps=False" --exclude=PackageKit-gstreamer-plugin
+        dnf -y groupupdate sound-and-video
     
     - name: install the virtualization package group
       dnf:
@@ -51,18 +51,24 @@
           - git 
           - dnf-plugins-core
           - neovim
+          - curl 
+          - wget 
+          - rsync 
+          - git-delta
+          - duf
+          - python-pip
         state: present
 
     - name: Install brave config
       shell: |
-        dnf config-manager --add-repo https://brave-browser-rpm-release.s3.brave.com/brave-browser.repo 
+        dnf -y config-manager --add-repo https://brave-browser-rpm-release.s3.brave.com/brave-browser.repo 
         rpm --import https://brave-browser-rpm-release.s3.brave.com/brave-core.asc;
 
     - name: Install VSCode config 
       shell: |
         rpm --import https://packages.microsoft.com/keys/microsoft.asc
         sh -c 'echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/vscode.repo'
-        dnf check-update
+        dnf -y check-update
 
     - name: Install remaining
       dnf: 
@@ -95,7 +101,7 @@
         dest: /home/prakhar/.config/nvim/lua/custom
 
     - name: Set GNOME wallpaper
-      command: gsettings set org.gnome.desktop.background picture-uri 'wallpaper.jpg'
+      command: gsettings set org.gnome.desktop.background picture-uri 'wallpaper.png'
 
     - name: Install GNOME extensions
       command: gnome-extensions install Vitals@CoreCoding.com\
