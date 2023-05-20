@@ -3,7 +3,7 @@
   gather_facts: yes
   vars:
     the_user: "{{ ansible_user_id }}"
-    nc_command: " > /dev/tcp/localhost/4343 2>&1"
+    nc_command: "| /usr/bin/nc localhost 4343"
   tasks:
     - debug: var=the_user
     - debug: var=playbook_dir
@@ -23,20 +23,20 @@
     - name: Clear cache and update
       become: yes
       shell: |
-        "dnf -y clean all {{ nc_command }}"
-        "dnf -y update {{ nc_command }}"
+        dnf -y clean all {{ nc_command }}
+        dnf -y update {{ nc_command }}
 
     - name: Enable RPMFusion
       become: yes
       shell: |
-        "dnf -y install https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm {{ nc_command }}"
+        dnf -y install https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm {{ nc_command }}
 
     - name: Update Code
       become: yes
       shell: |
-        "dnf -y groupupdate core {{ nc_command }}"
+        dnf -y groupupdate core {{ nc_command }}
 
-    - name: Update Hostnames
+    - name: Update Hostname
       become: yes
       hostname: 
         name: endeavour
@@ -44,27 +44,17 @@
     - name: Media Codecs
       become: yes
       shell: |
-        "dnf -y groupupdate multimedia --setop=\"install_weak_deps=False\" --exclude=PackageKit-gstreamer-plugin {{ nc_command }}"
-        "dnf -y groupupdate sound-and-video {{ nc_command }}"
+        dnf -y groupupdate multimedia --setop="install_weak_deps=False" --exclude=PackageKit-gstreamer-plugin {{ nc_command }}
+        dnf -y groupupdate sound-and-video {{ nc_command }}
 
     - name: install the virtualization package group
       become: yes
       dnf:
-        name: '@virtualization'
+        name: 
+          - '@virtualization'
+          - '@development-tools'
+          - '@C Development Tools and Libraries'
         state: present
-
-    - name: install development tools
-      become: yes
-      dnf:
-        name: '@development-tools'
-        state: present
-
-    - name: start and enable libvirtd
-      become: yes
-      systemd:
-        name: libvirtd
-        state: started
-        enabled: yes
 
     - name: Install packages with dnf
       become: yes
@@ -83,14 +73,33 @@
           - python-pip
           - foliate
           - gnome-tweaks 
+          - gnome-shell-extension-pop-shell
+          - gnome-extensions-app
         state: present
+    
+    - name: Set git config email
+      git_config:
+        name: user.email
+        value: "prakharjagwani7@gmail.com"
+        scope: global
+
+    - name: Set git config name
+      git_config:
+        name: user.name
+        value: "Prakkhar Jagwani"
+        scope: global
+
+    - name: Ensure fonts directory exists
+      file:
+        path: "/home/{{ the_user }}/.local/share/fonts"
+        state: directory
 
     - name: Install terminal font 
       unarchive:
         src: https://github.com/ryanoasis/nerd-fonts/releases/download/v3.0.1/FiraCode.zip
         dest: "/home/{{ the_user }}/.local/share/fonts"
         remote_src: yes
-    #
+    
     - name: Install nvim font 
       unarchive:
         src: https://github.com/ryanoasis/nerd-fonts/releases/download/v3.0.1/JetBrainsMono.zip
@@ -100,8 +109,8 @@
     - name: Install brave config
       become: yes
       shell: |
-        "dnf -y config-manager --add-repo https://brave-browser-rpm-release.s3.brave.com/brave-browser.repo {{ nc_command }}"
-        "rpm --import https://brave-browser-rpm-release.s3.brave.com/brave-core.asc {{ nc_command }}"
+        dnf -y config-manager --add-repo https://brave-browser-rpm-release.s3.brave.com/brave-browser.repo {{ nc_command }}
+        rpm --import https://brave-browser-rpm-release.s3.brave.com/brave-core.asc {{ nc_command }}
 
     - name: Install docker config
       become: yes
@@ -113,9 +122,9 @@
       shell: |
         rpm --import https://packages.microsoft.com/keys/microsoft.asc
         sh -c 'echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/vscode.repo'
-        "dnf -y check-update {{ nc_command }}"
+        dnf -y check-update {{ nc_command }}
 
-    - name: Install remaining
+    - name: Install remaining packages
       become: yes
       dnf: 
         name:
@@ -128,10 +137,12 @@
           - docker-compose-plugin
         state: present
 
-    - name: start and enable docker
+    - name: start and enable systemd services
       become: yes
       systemd:
-        name: docker
+        name: 
+          - docker
+          - libvirtd
         state: started
         enabled: yes
 
@@ -159,27 +170,17 @@
         repo: git@github.com:Prakhar314/NvChad-Config.git
         dest: "/home/{{ the_user }}/.config/nvim/lua/custom"
 
-    - name: Set GNOME wallpaper
-      command: gsettings set org.gnome.desktop.background picture-uri '{{ playbook_dir }}/wallpaper.png'
-
-    - name: Install gext
-      pip:
-        name: gnome-extensions-cli
-
-    - name: Install GNOME extensions
-      command: gext install "{{ item }}"
-      loop:
-        - Vitals@CoreCoding.com
-        - no_activities@yaya.cout
-        - sp-tray@sp-tray.esenliyim.github.com
-        - spotify-controller@koolskateguy89
-        # - gsconnect@andyholmes.github.io
-        - custom-accent-colors@demiskp
-        - user-theme@gnome-shell-extensions.gcampax.github.com
-        - GPU_profile_selector@lorenzo9904.gmail.com
-        - background-logo@fedorahosted.org
-        - pop-shell@system76.com
-        - appindicatorsupport@rgcjonas.gmail.com
+    - name: Install flatpaks
+      flatpak:
+        name: 
+          - com.spotify.Client
+          - md.obsidian.Obsidian
+        state: present
+      
+    - name: Download Obsidian Vault
+      git:
+        repo: git@github.com:Prakhar314/Obsidian-Vault.git 
+        dest: "/home/{{ the_user }}/Documents/Obsidian-Vault"
 
     - name: change user shell to fish
       become: yes
@@ -196,3 +197,28 @@
     - name: Copy alacritty config 
       shell: |
         cp -r "{{ playbook_dir }}/alacritty" "/home/{{ the_user }}/.config/alacritty"
+
+    - name: Set GNOME wallpaper
+      command: gsettings set org.gnome.desktop.background picture-uri '{{ playbook_dir }}/wallpaper.png'
+
+    - name: Install CLI to manage gnome extensions
+      pip:
+        name: gnome-extensions-cli
+
+    - name: Install GNOME extensions
+      shell: |
+        gext install "{{ item }}"
+        gext enable "{{ item }}"
+      loop:
+        - Vitals@CoreCoding.com
+        - no_activities@yaya.cout
+        - sp-tray@sp-tray.esenliyim.github.com
+        - spotify-controller@koolskateguy89
+        # - gsconnect@andyholmes.github.io
+        - custom-accent-colors@demiskp
+        - user-theme@gnome-shell-extensions.gcampax.github.com
+        # - GPU_profile_selector@lorenzo9904.gmail.com
+        - background-logo@fedorahosted.org
+        - appindicatorsupport@rgcjonas.gmail.com
+        - pop-shell@system76.com
+    
