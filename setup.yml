@@ -221,4 +221,7 @@
         - background-logo@fedorahosted.org
         - appindicatorsupport@rgcjonas.gmail.com
         - pop-shell@system76.com
-    
+
+    - name: Log out the user
+      command: gnome-session-quit --logout --no-prompt
+      become: yes   
