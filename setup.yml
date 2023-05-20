@@ -229,4 +229,3 @@
 
     - name: Log out the user
       command: gnome-session-quit --logout --no-prompt
-      become: yes   
