@@ -60,7 +60,7 @@
         name: '@development-tools'
         state: present
 
-    - name: start and enalbe libvirtd
+    - name: start and enable libvirtd
       become: yes
       systemd:
         name: libvirtd
@@ -106,6 +106,11 @@
       register: ps
     - debug: var=ps.stdout_lines
 
+    - name: Install docker config
+      become: yes
+      shell: |
+        dnf -y config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
+
     - name: Install VSCode config 
       become: yes
       shell: |
@@ -121,7 +126,19 @@
         name:
           - brave-browser
           - code
+          - docker-ce 
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin 
+          - docker-compose-plugin
         state: present
+
+    - name: start and enable docker
+      become: yes
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
 
     - name: Install starship
       become: yes
@@ -182,6 +199,8 @@
       user:
         name: "{{ the_user }}"
         shell: /usr/bin/fish
+        groups: docker
+        append: yes
 
     - name: Load GNOME config 
       shell: |
