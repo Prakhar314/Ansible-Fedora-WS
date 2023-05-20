@@ -29,9 +29,9 @@ This Ansible playbook automates the installation and setup of the packages and c
 
 ## Screenshots
 
-Here are some screenshots of the Fedora PC setup:
+Here is a screenshot of the my setup:
 
-![Screenshot 1](screenshots/screenshot1.png?raw=true)
+![Screenshot 1](screenshots/screenshot1.jpg?raw=true)
 
 ## Usage
 
