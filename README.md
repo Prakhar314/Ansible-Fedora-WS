@@ -44,3 +44,4 @@ Here is a screenshot of the my setup:
 ## TODO
 - [ ] Install GNOME shell extensions without a prompt.
 - [ ] Error handling (port for netcat, missing permissions, etc.)
+- [ ] More configurations (accent colors, etc.)

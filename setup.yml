@@ -137,14 +137,19 @@
           - docker-compose-plugin
         state: present
 
-    - name: start and enable systemd services
+    - name: start and enable libvirtd
       become: yes
       systemd:
-        name: 
-          - docker
-          - libvirtd
+        name: libvirtd
         state: started
         enabled: yes
+
+    - name: start and enable docker
+      become: yes
+      systemd:
+        name: docker
+        state: started
+        enabled: yes 
 
     - name: Install starship
       become: yes
