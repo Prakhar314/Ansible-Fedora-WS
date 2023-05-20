@@ -31,7 +31,7 @@ This Ansible playbook automates the installation and setup of the packages and c
 
 Here are some screenshots of the Fedora PC setup:
 
-![Screenshot 1](screenshots/screenshot1.png)
+![Screenshot 1](screenshots/screenshot1.png?raw=true)
 
 ## Usage
 
@@ -42,5 +42,5 @@ Here are some screenshots of the Fedora PC setup:
 5. Open debug log using: `nc -lk 4343`
 
 ## TODO
-[] Install GNOME shell extensions without a prompt.
-[] Error handling (port for netcat, missing permissions, etc.)
+- [ ] Install GNOME shell extensions without a prompt.
+- [ ] Error handling (port for netcat, missing permissions, etc.)
