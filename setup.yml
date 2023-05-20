@@ -3,6 +3,7 @@
   gather_facts: yes
   vars:
     the_user: "{{ ansible_user_id }}"
+    nc_command: " > /dev/tcp/localhost/4343 2>&1"
   tasks:
     - debug: var=the_user
     - debug: var=playbook_dir
@@ -22,18 +23,18 @@
     - name: Clear cache and update
       become: yes
       shell: |
-        dnf -y clean all
-        dnf -y update
-      register: ps
-    - debug: var=ps.stdout_lines
+        "dnf -y clean all {{ nc_command }}"
+        "dnf -y update {{ nc_command }}"
 
     - name: Enable RPMFusion
       become: yes
       shell: |
-        dnf -y install https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm 
-        dnf -y groupupdate core 
-      register: ps
-    - debug: var=ps.stdout_lines
+        "dnf -y install https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm {{ nc_command }}"
+
+    - name: Update Code
+      become: yes
+      shell: |
+        "dnf -y groupupdate core {{ nc_command }}"
 
     - name: Update Hostnames
       become: yes
@@ -43,10 +44,8 @@
     - name: Media Codecs
       become: yes
       shell: |
-        dnf -y groupupdate multimedia --setop="install_weak_deps=False" --exclude=PackageKit-gstreamer-plugin
-        dnf -y groupupdate sound-and-video
-      register: ps
-    - debug: var=ps.stdout_lines
+        "dnf -y groupupdate multimedia --setop=\"install_weak_deps=False\" --exclude=PackageKit-gstreamer-plugin {{ nc_command }}"
+        "dnf -y groupupdate sound-and-video {{ nc_command }}"
 
     - name: install the virtualization package group
       become: yes
@@ -101,10 +100,8 @@
     - name: Install brave config
       become: yes
       shell: |
-        dnf -y config-manager --add-repo https://brave-browser-rpm-release.s3.brave.com/brave-browser.repo 
-        rpm --import https://brave-browser-rpm-release.s3.brave.com/brave-core.asc;
-      register: ps
-    - debug: var=ps.stdout_lines
+        "dnf -y config-manager --add-repo https://brave-browser-rpm-release.s3.brave.com/brave-browser.repo {{ nc_command }}"
+        "rpm --import https://brave-browser-rpm-release.s3.brave.com/brave-core.asc {{ nc_command }}"
 
     - name: Install docker config
       become: yes
@@ -116,9 +113,7 @@
       shell: |
         rpm --import https://packages.microsoft.com/keys/microsoft.asc
         sh -c 'echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/vscode.repo'
-        dnf -y check-update
-      register: ps
-    - debug: var=ps.stdout_lines
+        "dnf -y check-update {{ nc_command }}"
 
     - name: Install remaining
       become: yes
@@ -144,8 +139,6 @@
       become: yes
       shell: |
         curl -sS https://starship.rs/install.sh | sh  -s -- -y
-      register: ps
-    - debug: var=ps.stdout_lines
 
     - name: Configure starship for fish 
       lineinfile: 
@@ -184,15 +177,9 @@
         - custom-accent-colors@demiskp
         - user-theme@gnome-shell-extensions.gcampax.github.com
         - GPU_profile_selector@lorenzo9904.gmail.com
-        # - apps-menu@gnome-shell-extensions.gcampax.github.com
-        # - background-logo@fedorahosted.org
-        # - launch-new-instance@gnome-shell-extensions.gcampax.github.com
-        # - places-menu@gnome-shell-extensions.gcampax.github.com
-        # - window-list@gnome-shell-extensions.gcampax.github.com
+        - background-logo@fedorahosted.org
         - pop-shell@system76.com
         - appindicatorsupport@rgcjonas.gmail.com
-      register: ps
-    - debug: var=ps.stdout_lines
 
     - name: change user shell to fish
       become: yes
